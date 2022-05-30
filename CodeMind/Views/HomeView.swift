@@ -18,6 +18,7 @@ struct HomeView: View {
     @State var selectedIndex = 0
     // 环境对象，各个Views都可调用
     @EnvironmentObject var model: Model
+    @AppStorage("isLiteMode") var isLiteMode = true
     
     
     var body: some View {
@@ -127,7 +128,7 @@ struct HomeView: View {
                         // 旋转3D效果
                         .rotation3DEffect(.degrees(minX / -10), axis: (x: 0, y: 1, z: 0))
                         // 阴影要在3d效果后才能生效
-                        .shadow(color: Color("Shadow").opacity(0.3), radius: 10, x: 0, y: 10)
+                        .shadow(color: Color("Shadow").opacity(isLiteMode ? 0 : 0.3), radius: 5, x: 0, y: 3)
                         // 模糊文本
                         .blur(radius: abs(minX / 40))
                         .overlay(

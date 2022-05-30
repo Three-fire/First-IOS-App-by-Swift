@@ -21,7 +21,7 @@ struct ContentView: View {
             case .home:
                 HomeView()
             case .explore:
-                AccountView()
+                ExploreView()
             case .notifications:
                 AccountView()
             case .library:
@@ -34,30 +34,11 @@ struct ContentView: View {
             
             // 点击小头像后弹出SignUpView
             if showModal {
-                ZStack {
-                    Color.clear.background(.regularMaterial)
-                        .ignoresSafeArea()
+                
+                // 自定义视图切换View
+                ModalView()
                     
-                    // SignUpView 
-                    SignUpView()
-                    
-                    // 关闭按钮
-                    Button {
-                        withAnimation {
-                            showModal = false
-                        }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.body.weight(.bold))
-                            .foregroundColor(.secondary)
-                            .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(20)
-                }
-                // 令其正常过渡
-                .zIndex(1)
+                    .zIndex(1)   //令其正常过渡
             }
         }
         // 滚动条不越界Tab Bar

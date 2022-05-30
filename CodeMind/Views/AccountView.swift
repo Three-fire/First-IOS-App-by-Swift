@@ -10,7 +10,25 @@ import SwiftUI
 struct AccountView: View {
     @State var isDeleted = false
     @State var isPinned = false
-    @Environment(\.presentationMode) var presentationMode
+    @State var address: Address = Address(id: 1, country: "China")
+    @Environment(\.dismiss) var dismiss
+    @AppStorage("isLogged") var isLogged = false
+    @AppStorage("isLiteMode") var isLiteMode = true
+    @ObservedObject var coinModel = CoinModel()
+    
+    // 异步获取地址 ==> 哪怕app freeze
+    func fetchAddress() async {
+        do {
+            let url = URL(string: "https://random-data-api.com/api/address/random_address")!
+            let (data, _) = try await URLSession.shared.data(from: url)
+            // Api获得的数据与Model中的Address数据模型相匹配
+            address = try JSONDecoder().decode(Address.self, from: data)
+        } catch {
+            // Show Error
+            address = Address(id: 1, country: "Error fetching")
+        }
+        
+    }
     
     var body: some View {
         // 导航视图
@@ -20,13 +38,40 @@ struct AccountView: View {
                 profile
                 // 导航菜单栏
                 menu
+                // Lite Mode切换
+                Section {
+                    Toggle(isOn: $isLiteMode) {
+                        Label("Lite Mode", systemImage: isLiteMode ? "tortoise" : "hare")
+                    }
+                }
+                .accentColor(.primary)
                 // URL链接区
                 links
+                // COINS区
+                coins
+                // 退出账号
+                Button {
+                    isLogged = false
+                    dismiss()
+                } label: {
+                    Text("Sign out")
+                }
+                .tint(.red)
+            }
+            // 运行异步函数
+            .task {
+                await fetchAddress()
+                await coinModel.fetchCoins()
+            }
+            // 顶部向下拉动刷新功能
+            .refreshable {
+                await fetchAddress()
+                await coinModel.fetchCoins()
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Account")
             // 取消AccountView模块显示
-            .navigationBarItems(trailing: Button { presentationMode.wrappedValue.dismiss()} label: { Text("Done").bold() })
+            .navigationBarItems(trailing: Button { dismiss() } label: { Text("Done").bold() })
         }
     }
     
@@ -54,7 +99,7 @@ struct AccountView: View {
             HStack {
                 Image(systemName: "location")
                     .imageScale(.small)
-                Text("China")
+                Text(address.country)
                     .foregroundColor(.secondary)
             }
         }
@@ -121,6 +166,30 @@ struct AccountView: View {
         }
         .listRowSeparator(.hidden)
         .accentColor(.primary)
+    }
+    
+    // Coins组件
+    var coins: some View {
+        Section(header: Text("Coins")) {
+            ForEach(coinModel.coins) { coin in
+                HStack {
+                    AsyncImage(url: URL(string: coin.logo)) { image in
+                        image.resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    .frame(width: 32, height: 32)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(coin.coin_name)
+                        Text(coin.acronym)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
     }
     
     // Pin组件
